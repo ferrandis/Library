@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class Library {
+public class Library implements Libraries{
     private final Inventory inventory;
     private final Loans loans;
     private ReadWriteLock rwl = new ReentrantReadWriteLock();
@@ -22,76 +22,57 @@ public class Library {
         this.loans = loans;
     }
 
+    @Override
     public Receipt borrowItem(String title, User user) throws ItemNotFoundException {
-        rwl.readLock().lock();
-        try {
-
             if (inventory.available(title)) {
-                rwl.readLock().unlock();
-                rwl.writeLock().lock();
-                try {
+                synchronized(this) {
                     Item borrowedItem = inventory.remove(title);
                     LocalDate returnDate = LocalDate.now(clock).plusWeeks(1L);
 
                     loans.add(borrowedItem, returnDate, user);
-                    rwl.readLock().lock();
-                    return new Receipt(returnDate, borrowedItem);
 
-                } finally {
-                    rwl.writeLock().unlock();
+                    return new Receipt(returnDate, borrowedItem);
                 }
 
             }
 
             throw ItemNotFoundException.itemNotFound(title);
-        } finally {
-            rwl.readLock().unlock();
-        }
+
     }
 
-    public void returnItem(Item item) {
-        rwl.writeLock().lock();
-        try {
+    @Override
+    public synchronized void returnItem(Item item) {
+
             inventory.add(item);
             loans.remove(item);
-        } finally {
-            rwl.writeLock().unlock();
-        }
+
     }
 
+    @Override
     public Set<String> currentInventory() {
-        rwl.readLock().lock();
-        try {
+
             return inventory.currentInventory();
-        } finally {
-            rwl.readLock().unlock();
-        }
+
     }
 
+    @Override
     public List<Item> overDueItems() {
-        rwl.readLock().lock();
-        try {
+
             return loans.overDueItems(LocalDate.now(clock));
-        } finally {
-            rwl.readLock().unlock();
-        }
+
     }
 
+    @Override
     public List<Item> borrowedItemsBy(User user) {
-        rwl.readLock().lock();
-        try {
+
             return loans.borrowedBy(user);
-        } finally {
-            rwl.readLock().unlock();
-        }
+
     }
 
+    @Override
     public List<Item> currentStock() {
-        rwl.readLock().lock();
-        try {
+
             return inventory.currentStock();
-        } finally {
-            rwl.readLock().unlock();
-        }
+
     }
 }

@@ -4,6 +4,8 @@ import library.*;
 import library.util.MoveableClock;
 import org.junit.Test;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +49,7 @@ public class LibrarySystemTest {
         List<Item> initialStock = inventory.currentStock();
         System.out.println("Finished populating initial inventory with " + initialStock.size() + " items.");
 
+        LocalDateTime start = LocalDateTime.now();
         MoveableClock clock = new MoveableClock();
 
         Library library = new Library(clock, inventory, new LoansImpl());
@@ -147,7 +150,10 @@ public class LibrarySystemTest {
         }
         System.out.println("Now we have all books back. Current stock is " + library.currentStock().size());
         assertThat(library.currentStock().size(), equalTo(initialStock.size()));
+        LocalDateTime end = LocalDateTime.now();
 
+        long duration = start.until(end, ChronoUnit.MILLIS);
+        System.out.println("Total time taken = " + duration);
 
     }
 }
